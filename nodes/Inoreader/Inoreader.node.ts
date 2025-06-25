@@ -194,7 +194,7 @@ export class Inoreader implements INodeType {
                     },
                 },
                 default: '',
-                description: 'Title of the article to save (optional)', 
+                description: 'Title of the article to save (optional, leave empty to let Inoreader fetch it from the URL)', 
             },
             {
                 displayName: 'Article Content',
@@ -210,8 +210,21 @@ export class Inoreader implements INodeType {
                     rows: 5,
                 },
                 default: '',
-                description: 'Content of the article to save (optional)', 
+                description: 'Content of the article to save (optional, leave empty to let Inoreader fetch it from the URL)', 
             },
+			{
+				displayName: 'Read later tag ID',
+				type: 'hidden',
+				name: 'tagId',
+				default: 'user/-/state/com.google/starred',
+				displayOptions: {
+					show: {
+						resource: ['article'],
+						operation: ['saveToReadLater'],
+					},
+				},
+				description: 'The tag ID from the Read later section',
+			}
 		],
 	};
 
@@ -307,7 +320,7 @@ export class Inoreader implements INodeType {
                     if (!articleUrl && !articleTitle && !articleContent) {
                         throw new Error('At least one of articleUrl, articleTitle, or articleContent must be provided!');
                     }
-
+					
                     const tagId = this.getNodeParameter('tagId', i) as string | undefined;
                     const options: IRequestOptions = {
                         method: 'POST' as 'POST',
