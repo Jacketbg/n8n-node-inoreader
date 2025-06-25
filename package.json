@@ -1,19 +1,19 @@
 {
-  "name": "n8n-nodes-<...>",
+  "name": "n8n-nodes-inoreader",
   "version": "0.1.0",
-  "description": "",
+	"description": "n8n node to call Inoreader API",
   "keywords": [
     "n8n-community-node-package"
   ],
   "license": "MIT",
   "homepage": "",
   "author": {
-    "name": "",
-    "email": ""
+		"name": "Yordan Yordanov",
+		"email": "yordan.yordanov@innologica.com"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/<...>/n8n-nodes-<...>.git"
+    "url": "https://github.com/Jacketbg/n8n-node-inoreader.git"
   },
   "engines": {
     "node": ">=20.15"
@@ -32,14 +32,12 @@
   ],
   "n8n": {
     "n8nNodesApiVersion": 1,
-    "credentials": [
-      "dist/credentials/ExampleCredentialsApi.credentials.js",
-      "dist/credentials/HttpBinApi.credentials.js"
-    ],
-    "nodes": [
-      "dist/nodes/ExampleNode/ExampleNode.node.js",
-      "dist/nodes/HttpBin/HttpBin.node.js"
-    ]
+		"credentials": [
+			"dist/credentials/Inoreader.credentials.js"
+		],
+		"nodes": [
+			"dist/nodes/Inoreader/Inoreader.node.js"
+		]
   },
   "devDependencies": {
     "@typescript-eslint/parser": "~8.32.0",
