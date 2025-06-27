@@ -329,7 +329,7 @@ export class Inoreader implements INodeType {
                             'Content-Type': 'application/x-www-form-urlencoded',
                             Accept: 'application/json',
                         },
-                        body: {
+                        form: {
                             url: articleUrl,
                             title: articleTitle,
                             content: articleContent,

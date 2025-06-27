@@ -36,7 +36,8 @@
 			"dist/credentials/Inoreader.credentials.js"
 		],
 		"nodes": [
-			"dist/nodes/Inoreader/Inoreader.node.js"
+			"dist/nodes/Inoreader/Inoreader.node.js",
+			"dist/nodes/Inoreader/InoreaderTrigger.node.js"
 		]
   },
   "devDependencies": {
