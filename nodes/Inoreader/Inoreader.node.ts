@@ -11,7 +11,7 @@ export class Inoreader implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'Inoreader',
 		name: 'inoreader',
-		icon: 'file:inoreader.svg',
+		icon: 'file:Inoreader.svg',
 		group: ['output'],
 		version: 1,
 		description: 'Interact with the Inoreader API',
@@ -31,6 +31,7 @@ export class Inoreader implements INodeType {
 				displayName: 'Resource',
 				name: 'resource',
 				type: 'options',
+				noDataExpression: true,
 				options: [
 					{
 						name: 'Article',
@@ -40,6 +41,10 @@ export class Inoreader implements INodeType {
 						name: 'Feed',
 						value: 'feed',
 					},
+					{
+						name: 'Tag',
+						value: 'tag',
+					},
 				],
 				default: 'article',
 			},
@@ -47,37 +52,56 @@ export class Inoreader implements INodeType {
 				displayName: 'Operation',
 				name: 'operation',
 				type: 'options',
+				noDataExpression: true,
 				options: [
 					{
-						name: 'Get from Feed',
+						name: 'Get From Feed',
 						value: 'getFromFeed',
 						description: 'Get articles from a specific feed',
+						action: 'Get articles from feed',
 					},
 					{
-						name: 'Get from Folder',
+						name: 'Get From Folder',
 						value: 'getFromFolder',
 						description: 'Get articles from a specific folder',
+						action: 'Get articles from folder',
 					},
 					{
-						name: 'Get from Tag',
+						name: 'Get From Tag',
 						value: 'getFromTag',
 						description: 'Get articles from a specific tag',
+						action: 'Get articles from tag',
 					},
                     {
-						name: 'Get from Read later',
+						name: 'Get From Read Later',
 						value: 'getFromReadLater',
 						description: 'Get articles from the Read later section',
+						action: 'Get articles from Read later',
 					},
                     {
-						name: 'Save to Read later',
+						name: 'Create in Read Later',
 						value: 'saveToReadLater',
-						description: 'Save an article to the Read later section',
+						description: 'Create external article and save to the Read later section',
+						action: 'Create new article in Read later',
 					},
                     {
-						name: 'Save to tag',
+						name: 'Save to Tag',
 						value: 'saveToTag',
-						description: 'Save an article to a specific tag',
+						description: 'Create external article and save to a specific tag',
+						action: 'Create new article in a specific tag',
 					},
+					{
+						name: 'Add tag',
+						value: 'addToTag',
+						description: 'Add a tag to an article',
+						action: 'Add tag to article',
+					},
+					{
+						name: 'Add to Read Later',
+						value: 'addToReadLater',
+						description: 'Add an article to the Read later section',
+						action: 'Add article to Read later',
+					}
 				],
 				default: 'getFromFeed',
 				displayOptions: {
@@ -90,11 +114,13 @@ export class Inoreader implements INodeType {
 				displayName: 'Operation',
 				name: 'operation',
 				type: 'options',
+				noDataExpression: true,
 				options: [
 					{
-						name: 'Get all feeds',
+						name: 'Get All Feeds',
 						value: 'getAllFeeds',
                         description: 'Get all feeds from the user',
+						action: 'Get all feeds in user account',
 					},
 				],
 				default: 'getAllFeeds',
@@ -104,9 +130,29 @@ export class Inoreader implements INodeType {
 					},
 				},
 			},
+			{
+				displayName: 'Operation',
+				name: 'operation',
+				type: 'options',
+				noDataExpression: true,
+				options: [
+					{
+						name: 'Get All Tags',
+						value: 'getAllTags',
+						description: 'Get all tags from the user',
+						action: 'Get all tags in user account',
+					},
+				],
+				default: 'getAllTags',
+				displayOptions: {
+					show: {
+						resource: ['tag'],
+					},
+				},	
+			},
 			// Feed selection
 			{
-				displayName: 'Feed',
+				displayName: 'Feed Name or ID',
 				name: 'feedId',
 				type: 'options',
 				typeOptions: {
@@ -119,12 +165,12 @@ export class Inoreader implements INodeType {
 					},
 				},
 				required: true,
-				description: 'Select the feed to get articles from',
+				description: 'Select the feed to get articles from. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
                 default: '',
 			},
 			// Folder selection
 			{
-				displayName: 'Folder',
+				displayName: 'Folder Name or ID',
 				name: 'folderId',
 				type: 'options',
 				typeOptions: {
@@ -137,12 +183,12 @@ export class Inoreader implements INodeType {
 					},
 				},
 				required: true,
-				description: 'Select the folder to get articles from',
+				description: 'Select the folder to get articles from. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
                 default: '',
 			},
 			// Tag selection
 			{
-				displayName: 'Tag',
+				displayName: 'Tag Name or ID',
 				name: 'tagId',
 				type: 'options',
 				typeOptions: {
@@ -151,11 +197,11 @@ export class Inoreader implements INodeType {
 				displayOptions: {
 					show: {
 						resource: ['article'],
-						operation: ['getFromTag', 'saveToTag'],
+						operation: ['getFromTag', 'saveToTag', 'addToTag'],
 					},
 				},
 				required: true,
-				description: 'Select the tag to get articles from',
+				description: 'Select the tag to get articles from. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
                 default: '',
 			},
 			// Common parameters for stream/contents
@@ -163,12 +209,17 @@ export class Inoreader implements INodeType {
 				displayName: 'Limit',
 				name: 'limit',
 				type: 'number',
-				default: 20,
+				default: 50,
 				typeOptions: {
 					minValue: 1,
-					maxValue: 1000,
 				},
-				description: 'Maximum number of articles to return',
+				displayOptions: {
+					show: {
+						resource: ['article'],
+						operation: ['getFromTag', 'getFromFeed', 'getFromFolder', 'getFromReadLater'],
+					},
+				},
+				description: 'Max number of results to return',
 			},
             {
                 displayName: 'Article URL',
@@ -213,17 +264,30 @@ export class Inoreader implements INodeType {
                 description: 'Content of the article to save (optional, leave empty to let Inoreader fetch it from the URL)', 
             },
 			{
-				displayName: 'Read later tag ID',
+				displayName: 'Read Later Tag ID',
 				type: 'hidden',
 				name: 'tagId',
 				default: 'user/-/state/com.google/starred',
 				displayOptions: {
 					show: {
 						resource: ['article'],
-						operation: ['saveToReadLater'],
+						operation: ['saveToReadLater', 'addToReadLater'],
 					},
 				},
-				description: 'The tag ID from the Read later section',
+				description: 'The tag ID for the Read later section',
+			},
+			{
+				displayName: 'Article ID',
+				name: 'articleId',
+				type: 'string',
+				displayOptions: {
+					show: {
+						resource: ['article'],
+						operation: ['addToTag', 'addToReadLater'],
+					},
+				},
+				default: '',
+				description: 'ID of the article to which the tag will be added. This is usually in the format "tag:google.com,2005:reader/item/0000000a9de1460f". You can find this ID in the response of the "Get From X" operations as well as the "New Article in X" Trigger.',
 			}
 		],
 	};
@@ -313,7 +377,37 @@ export class Inoreader implements INodeType {
 
 			let streamId: string | undefined;
 			if (resource === 'article') {
-                if(operation === 'saveToReadLater' || operation === 'saveToTag') {
+				if(operation == 'addToReadLater' || operation === 'addToTag') {
+					const articleId = this.getNodeParameter('articleId', i) as string;
+					if (!articleId) {	
+						throw new Error('Article ID is required for adding a tag!');
+					}
+					const tagId = this.getNodeParameter('tagId', i) as string;
+					if (!tagId) {
+						throw new Error('Tag ID is required for adding a tag!');
+					}
+					const options: IRequestOptions = {
+						method: 'POST' as 'POST',
+						url: 'https://www.inoreader.com/reader/api/0/edit-tag?return_json=true&partner=n8n',
+						headers: {
+							'Content-Type': 'application/x-www-form-urlencoded',
+							Accept: 'application/json',
+						},
+                        form: {
+                            a: tagId,
+                            i: articleId,
+                        },
+					};
+					let responseData = await this.helpers.requestOAuth2.call(
+						this,
+						'inoreaderOAuth2Api',
+						options
+					);
+					if (typeof responseData === 'string') {
+						responseData = JSON.parse(responseData);
+					}
+					returnData.push({ json: responseData });
+                }else if(operation === 'saveToReadLater' || operation === 'saveToTag') {
                     const articleUrl = this.getNodeParameter('articleUrl', i) as string;
                     const articleTitle = this.getNodeParameter('articleTitle', i) as string;
                     const articleContent = this.getNodeParameter('articleContent', i) as string;
@@ -417,7 +511,33 @@ export class Inoreader implements INodeType {
                 } else {
                     returnData.push({ json: responseData });
                 }
-            }
+            }else if (resource === 'tag' && operation === 'getAllTags') {
+				const options: IRequestOptions = {
+					method: 'GET' as 'GET',
+					url: 'https://www.inoreader.com/reader/api/0/tag/list?types=1',
+					headers: { Accept: 'application/json' },
+				};
+				
+				let responseData = await this.helpers.requestOAuth2.call(
+					this,
+					'inoreaderOAuth2Api',
+					options
+				);
+
+				if (typeof responseData === 'string') {
+					responseData = JSON.parse(responseData);
+				}
+
+				if (responseData.tags) {
+					for (const tag of responseData.tags) {
+						if (tag.type === 'folder') {
+							returnData.push({ json: tag });
+						}
+					}
+				} else {
+					returnData.push({ json: responseData });
+				}
+			}
 		}
 
 		return this.prepareOutputData(returnData);

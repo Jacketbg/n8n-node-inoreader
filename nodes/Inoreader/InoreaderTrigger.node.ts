@@ -5,20 +5,24 @@ import type {
 	ILoadOptionsFunctions,
 	NodeConnectionType,
 	IRequestOptions,
-    INodeExecutionData,
+    INodeExecutionData
+	
 } from 'n8n-workflow';
+
+// import { pollTimesTriggerFields } from 'n8n-workflow';
 
 export class InoreaderTrigger implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'Inoreader Trigger',
 		name: 'inoreaderTrigger',
-		icon: 'file:inoreader.svg',
+		icon: 'file:Inoreader.svg',
 		group: ['trigger'],
 		version: 1,
 		description: 'Triggers when a new article appears in Inoreader',
 		defaults: {
 			name: 'Inoreader Trigger',
 		},
+		polling: true,
 		inputs: [],
 		outputs: ['main'] as NodeConnectionType[],    
 		credentials: [
@@ -44,7 +48,7 @@ export class InoreaderTrigger implements INodeType {
 						description: 'New article in a folder',
 					},
 					{
-						name: 'Read later',
+						name: 'Read Later',
 						value: 'readLater',
 						description: 'New article in Read later',
 					},
@@ -52,7 +56,7 @@ export class InoreaderTrigger implements INodeType {
 				default: 'feed',
 			},
 			{
-				displayName: 'Feed',
+				displayName: 'Feed Name or ID',
 				name: 'feedId',
 				type: 'options',
 				typeOptions: {
@@ -65,10 +69,10 @@ export class InoreaderTrigger implements INodeType {
 				},
 				required: true,
 				default: '',
-				description: 'Feed to watch for new articles',
+				description: 'Feed to watch for new articles. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
 			},
 			{
-				displayName: 'Folder',
+				displayName: 'Folder Name or ID',
 				name: 'folderId',
 				type: 'options',
 				typeOptions: {
@@ -81,16 +85,7 @@ export class InoreaderTrigger implements INodeType {
 				},
 				required: true,
 				default: '',
-				description: 'Folder to watch for new articles',
-			},
-			// No dropdown needed for "read later" since it's a fixed ID
-			{
-				displayName: 'Polling Interval',
-				name: 'pollingInterval',
-				type: 'number',
-				typeOptions: { minValue: 1, maxValue: 60 },
-				default: 5,
-				description: 'How often to check for new articles (in minutes)',
+				description: 'Folder to watch for new articles. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
 			},
 		],
 	};
@@ -156,7 +151,7 @@ export class InoreaderTrigger implements INodeType {
 		}
 
 		const qs = {
-			n: 10, // Number of articles to fetch per poll (tweak as needed)
+			n: 20,
 		};
 
 		const options: IRequestOptions = {

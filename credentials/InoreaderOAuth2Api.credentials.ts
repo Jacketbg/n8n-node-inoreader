@@ -6,6 +6,13 @@ export class InoreaderOAuth2Api implements ICredentialType {
 	displayName = 'Inoreader OAuth2 API';
 	documentationUrl = 'https://www.inoreader.com/developers/oauth';
 
+	queryParameters = [
+		{
+			name: 'access_type',
+			value: 'offline',
+		},
+	];
+	
 	properties: INodeProperties[] = [
 		{
 			displayName: 'App ID',
@@ -18,6 +25,7 @@ export class InoreaderOAuth2Api implements ICredentialType {
 			displayName: 'App Key',
 			name: 'clientSecret',
 			type: 'string',
+			typeOptions: { password: true },
 			default: '',
 			required: true,
 		},
