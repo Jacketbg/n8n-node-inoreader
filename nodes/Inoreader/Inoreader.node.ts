@@ -61,18 +61,6 @@ export class Inoreader implements INodeType {
 				noDataExpression: true,
 				options: [
 					{
-						name: 'Create in Read Later',
-						value: 'saveToReadLater',
-						description: 'Create external article and save to the Read later section',
-						action: 'Create new article in read later',
-					},
-					{
-						name: 'Create in Tag',
-						value: 'saveToTag',
-						description: 'Create external article and save to a specific tag',
-						action: 'Create new article in a specific tag',
-					},
-					{
 						name: 'Add Tag',
 						value: 'addToTag',
 						description: 'Add a tag to an article',
@@ -83,6 +71,18 @@ export class Inoreader implements INodeType {
 						value: 'addToReadLater',
 						description: 'Add an article to the Read later section',
 						action: 'Add article to read later',
+					},
+					{
+						name: 'Create in Read Later',
+						value: 'saveToReadLater',
+						description: 'Create external article and save to the Read later section',
+						action: 'Create new article in read later',
+					},
+					{
+						name: 'Create in Tag',
+						value: 'saveToTag',
+						description: 'Create external article and save to a specific tag',
+						action: 'Create new article in a specific tag',
 					},
 					{
 						name: 'Get Many From Feed',
@@ -177,7 +177,7 @@ export class Inoreader implements INodeType {
 				},	
 			},
 			{
-				displayName: 'Feed Name',
+				displayName: 'Feed Name or ID',
 				name: 'feedId',
 				type: 'options',
 				typeOptions: {
@@ -194,7 +194,7 @@ export class Inoreader implements INodeType {
                 default: '',
 			},
 			{
-				displayName: 'Folder Name',
+				displayName: 'Folder Name or ID',
 				name: 'folderId',
 				type: 'options',
 				typeOptions: {
@@ -211,7 +211,7 @@ export class Inoreader implements INodeType {
                 default: '',
 			},
 			{
-				displayName: 'Tag Name',
+				displayName: 'Tag Name or ID',
 				name: 'tagId',
 				type: 'options',
 				typeOptions: {
@@ -232,7 +232,7 @@ export class Inoreader implements INodeType {
 				displayName: 'Limit',
 				name: 'limit',
 				type: 'number',
-				default: 10,
+				default: 50,
 				typeOptions: {
 					minValue: 1,
 				},
@@ -242,7 +242,7 @@ export class Inoreader implements INodeType {
 						operation: ['getFromTag', 'getFromFeed', 'getFromFolder', 'getFromReadLater'],
 					},
 				},
-				description: 'Maximum number of results to return',
+				description: 'Max number of results to return',
 			},
             {
                 displayName: 'Article URL',

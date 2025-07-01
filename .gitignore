@@ -9,4 +9,4 @@ yarn.lock
 .env
 build.sh
 .eslintrc.json
-
+.npmrc
