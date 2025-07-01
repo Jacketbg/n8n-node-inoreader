@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg width="180px" height="180px" viewBox="0 0 180 180" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-    <title>180x180</title>
-    <g id="180x180" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
-        <rect id="Rectangle" fill="#1875F3" x="0" y="0" width="180" height="180"></rect>
-        <path d="M90,33.046875 C121.454342,33.046875 146.953125,58.5456576 146.953125,90 C146.953125,121.454342 121.454342,146.953125 90,146.953125 C58.5456576,146.953125 33.046875,121.454342 33.046875,90 C33.046875,58.5456576 58.5456576,33.046875 90,33.046875 Z M107.085938,55.828125 C97.6496348,55.828125 90,63.4777598 90,72.9140625 C90,82.3503652 97.6496348,90 107.085938,90 C116.52224,90 124.171875,82.3503652 124.171875,72.9140625 C124.171875,63.4777598 116.52224,55.828125 107.085938,55.828125 Z" id="Combined-Shape" fill="#FFFFFF" fill-rule="nonzero"></path>
+<svg width="56px" height="56px" viewBox="0 0 56 56" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>ino_logo_svg</title>
+    <g id="ino_logo_svg" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <path d="M28,1 C42.9116882,1 55,13.0883118 55,28 C55,42.9116882 42.9116882,55 28,55 C13.0883118,55 1,42.9116882 1,28 C1,13.0883118 13.0883118,1 28,1 Z" id="logo_circle" fill="#1875F3"></path>
+        <path d="M36.1,11.8 C31.6264935,11.8 28,15.4264935 28,19.9 C28,24.3735065 31.6264935,28 36.1,28 C40.5735065,28 44.2,24.3735065 44.2,19.9 C44.2,15.4264935 40.5735065,11.8 36.1,11.8 Z" id="Path" fill="#FFFFFF"></path>
     </g>
 </svg>

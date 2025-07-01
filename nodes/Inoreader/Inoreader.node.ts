@@ -7,6 +7,8 @@ import type {
 	IRequestOptions,
 } from 'n8n-workflow';
 
+import { NodeOperationError } from 'n8n-workflow';
+
 export class Inoreader implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'Inoreader',
@@ -45,6 +47,10 @@ export class Inoreader implements INodeType {
 						name: 'Tag',
 						value: 'tag',
 					},
+					{
+						name: 'Folder',
+						value: 'folder',
+					},
 				],
 				default: 'article',
 			},
@@ -55,7 +61,19 @@ export class Inoreader implements INodeType {
 				noDataExpression: true,
 				options: [
 					{
-						name: 'Add tag',
+						name: 'Create in Read Later',
+						value: 'saveToReadLater',
+						description: 'Create external article and save to the Read later section',
+						action: 'Create new article in read later',
+					},
+					{
+						name: 'Create in Tag',
+						value: 'saveToTag',
+						description: 'Create external article and save to a specific tag',
+						action: 'Create new article in a specific tag',
+					},
+					{
+						name: 'Add Tag',
 						value: 'addToTag',
 						description: 'Add a tag to an article',
 						action: 'Add tag to article',
@@ -64,43 +82,31 @@ export class Inoreader implements INodeType {
 						name: 'Add to Read Later',
 						value: 'addToReadLater',
 						description: 'Add an article to the Read later section',
-						action: 'Add article to Read later',
+						action: 'Add article to read later',
 					},
 					{
-						name: 'Create in Read Later',
-						value: 'saveToReadLater',
-						description: 'Create external article and save to the Read later section',
-						action: 'Create new article in Read later',
-					},
-					{
-						name: 'Get From Feed',
+						name: 'Get Many From Feed',
 						value: 'getFromFeed',
 						description: 'Get articles from a specific feed',
-						action: 'Get articles from feed',
+						action: 'Get many articles from feed',
 					},
 					{
-						name: 'Get From Folder',
+						name: 'Get Many From Folder',
 						value: 'getFromFolder',
 						description: 'Get articles from a specific folder',
-						action: 'Get articles from folder',
+						action: 'Get many articles from folder',
 					},
                     {
-						name: 'Get From Read Later',
+						name: 'Get Many From Read Later',
 						value: 'getFromReadLater',
 						description: 'Get articles from the Read later section',
-						action: 'Get articles from Read later',
+						action: 'Get many articles from read later',
 					},
 					{
-						name: 'Get From Tag',
+						name: 'Get Many From Tag',
 						value: 'getFromTag',
 						description: 'Get articles from a specific tag',
-						action: 'Get articles from tag',
-					},
-                    {
-						name: 'Save to Tag',
-						value: 'saveToTag',
-						description: 'Create external article and save to a specific tag',
-						action: 'Create new article in a specific tag',
+						action: 'Get many articles from tag',
 					}
 				],
 				default: 'getFromFeed',
@@ -150,9 +156,28 @@ export class Inoreader implements INodeType {
 					},
 				},	
 			},
-			// Feed selection
 			{
-				displayName: 'Feed Name or ID',
+				displayName: 'Operation',
+				name: 'operation',
+				type: 'options',
+				noDataExpression: true,
+				options: [
+					{
+						name: 'Get All Folders',
+						value: 'getAllFolders',
+						description: 'Get all folders from the user',
+						action: 'Get all folders in user account',
+					},
+				],
+				default: 'getAllFolders',
+				displayOptions: {
+					show: {
+						resource: ['folder'],
+					},
+				},	
+			},
+			{
+				displayName: 'Feed Name',
 				name: 'feedId',
 				type: 'options',
 				typeOptions: {
@@ -168,9 +193,8 @@ export class Inoreader implements INodeType {
 				description: 'Select the feed to get articles from. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
                 default: '',
 			},
-			// Folder selection
 			{
-				displayName: 'Folder Name or ID',
+				displayName: 'Folder Name',
 				name: 'folderId',
 				type: 'options',
 				typeOptions: {
@@ -186,9 +210,8 @@ export class Inoreader implements INodeType {
 				description: 'Select the folder to get articles from. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
                 default: '',
 			},
-			// Tag selection
 			{
-				displayName: 'Tag Name or ID',
+				displayName: 'Tag Name',
 				name: 'tagId',
 				type: 'options',
 				typeOptions: {
@@ -209,7 +232,7 @@ export class Inoreader implements INodeType {
 				displayName: 'Limit',
 				name: 'limit',
 				type: 'number',
-				default: 50,
+				default: 10,
 				typeOptions: {
 					minValue: 1,
 				},
@@ -219,7 +242,7 @@ export class Inoreader implements INodeType {
 						operation: ['getFromTag', 'getFromFeed', 'getFromFolder', 'getFromReadLater'],
 					},
 				},
-				description: 'Max number of results to return',
+				description: 'Maximum number of results to return',
 			},
             {
                 displayName: 'Article URL',
@@ -380,11 +403,11 @@ export class Inoreader implements INodeType {
 				if(operation == 'addToReadLater' || operation === 'addToTag') {
 					const articleId = this.getNodeParameter('articleId', i) as string;
 					if (!articleId) {	
-						throw new Error('Article ID is required for adding a tag!');
+						throw new NodeOperationError(this.getNode(), 'Article ID is required for adding a tag!');
 					}
 					const tagId = this.getNodeParameter('tagId', i) as string;
 					if (!tagId) {
-						throw new Error('Tag ID is required for adding a tag!');
+						throw new NodeOperationError(this.getNode(), 'Tag ID is required for adding a tag!');
 					}
 					const options: IRequestOptions = {
 						method: 'POST' as 'POST',
@@ -412,7 +435,7 @@ export class Inoreader implements INodeType {
                     const articleTitle = this.getNodeParameter('articleTitle', i) as string;
                     const articleContent = this.getNodeParameter('articleContent', i) as string;
                     if (!articleUrl && !articleTitle && !articleContent) {
-                        throw new Error('At least one of articleUrl, articleTitle, or articleContent must be provided!');
+                        throw new NodeOperationError(this.getNode(), 'At least one of articleUrl, articleTitle, or articleContent must be provided!');
                     }
 					
                     const tagId = this.getNodeParameter('tagId', i) as string | undefined;
@@ -454,7 +477,7 @@ export class Inoreader implements INodeType {
                     const limit = this.getNodeParameter('limit', i, 20) as number;
     
                     if (!streamId) {
-                        throw new Error('No streamId resolved!');
+                        throw new NodeOperationError(this.getNode(), 'No streamId resolved!');
                     }
         
                     const qs: Record<string, any> = {
@@ -511,7 +534,7 @@ export class Inoreader implements INodeType {
                 } else {
                     returnData.push({ json: responseData });
                 }
-            }else if (resource === 'tag' && operation === 'getAllTags') {
+            }else if (resource === 'tag' && operation === 'getAllTags' || operation === 'getAllFolders') {
 				const options: IRequestOptions = {
 					method: 'GET' as 'GET',
 					url: 'https://www.inoreader.com/reader/api/0/tag/list?types=1',
@@ -530,7 +553,9 @@ export class Inoreader implements INodeType {
 
 				if (responseData.tags) {
 					for (const tag of responseData.tags) {
-						if (tag.type === 'folder') {
+						if( operation === 'getAllTags' && tag.type === 'tag') {
+							returnData.push({ json: tag });
+						} else if (operation === 'getAllFolders' && tag.type === 'folder') {
 							returnData.push({ json: tag });
 						}
 					}

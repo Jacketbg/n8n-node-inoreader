@@ -2,7 +2,7 @@
 
 This is an n8n community node. It lets you use **Inoreader** in your n8n workflows.
 
-**Inoreader** is a powerful content aggregator and RSS reader platform that lets you monitor, organize, and automate the flow of articles, feeds, and web content.
+Inoreader is a powerful content aggregator and RSS reader platform that lets you monitor, organize, and automate the flow of articles, feeds, and web content. Stay ahead with real-time updates from your favorite websites, blogs, newsletters, and social media – all in one customizable, distraction-free space.
 
 [n8n](https://n8n.io/) is a [fair-code licensed](https://docs.n8n.io/reference/license/) workflow automation platform.
 
@@ -31,15 +31,17 @@ This node supports the following operations:
 - New article in "Read later" section
 
 ### Actions (Inoreader node)
-- Get articles from feed
-- Get articles from folder
-- Get articles from tag
-- Get articles from "Read later"
-- Save external article to "Read later"
-- Save external article to tag
+- Create new article in "Read later" section
+- Create new article in a tag
+- Get many articles from feed
+- Get many articles from folder
+- Get many articles from tag
+- Get many articles from "Read later"
 - Assign tag to article
 - Assign "Read later" flag to article
 - Get all feeds
+- Get all tags
+- Get all folders
 
 ---
 
@@ -67,7 +69,7 @@ Tokens are managed automatically, and refresh tokens are supported.
 
 ## Usage
 
-- Add the **Inoreader Trigger** node to start a workflow when a new article appears in a feed, folder, or "Read later."
+- Add the **Inoreader Trigger** node to start a workflow when a new article appears in a feed, folder, or "Read later".
 - Use the **Inoreader** node to execute actions like tagging articles or saving external HTML content as new articles in Inoreader
 
 For general help with n8n, see [Try it out](https://docs.n8n.io/try-it-out/).
