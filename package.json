@@ -1,15 +1,21 @@
 {
   "name": "n8n-nodes-inoreader",
   "version": "0.1.0",
-	"description": "n8n node to call Inoreader API",
+  "description": "n8n node to call Inoreader API",
   "keywords": [
-    "n8n-community-node-package"
+    "n8n-community-node-package",
+    "inoreader",
+    "rss",
+    "rss feed",
+    "rss news",
+    "feed reader",
+    "news reader"
   ],
   "license": "MIT",
   "homepage": "",
   "author": {
-		"name": "Yordan Yordanov",
-		"email": "yordan.yordanov@innologica.com"
+    "name": "Yordan Yordanov",
+    "email": "yordan.yordanov@innologica.com"
   },
   "repository": {
     "type": "git",
@@ -32,13 +38,13 @@
   ],
   "n8n": {
     "n8nNodesApiVersion": 1,
-		"credentials": [
-			"dist/credentials/Inoreader.credentials.js"
-		],
-		"nodes": [
-			"dist/nodes/Inoreader/Inoreader.node.js",
-			"dist/nodes/Inoreader/InoreaderTrigger.node.js"
-		]
+    "credentials": [
+      "dist/credentials/Inoreader.credentials.js"
+    ],
+    "nodes": [
+      "dist/nodes/Inoreader/Inoreader.node.js",
+      "dist/nodes/Inoreader/InoreaderTrigger.node.js"
+    ]
   },
   "devDependencies": {
     "@typescript-eslint/parser": "~8.32.0",

@@ -55,6 +55,24 @@ export class Inoreader implements INodeType {
 				noDataExpression: true,
 				options: [
 					{
+						name: 'Add tag',
+						value: 'addToTag',
+						description: 'Add a tag to an article',
+						action: 'Add tag to article',
+					},
+					{
+						name: 'Add to Read Later',
+						value: 'addToReadLater',
+						description: 'Add an article to the Read later section',
+						action: 'Add article to Read later',
+					},
+					{
+						name: 'Create in Read Later',
+						value: 'saveToReadLater',
+						description: 'Create external article and save to the Read later section',
+						action: 'Create new article in Read later',
+					},
+					{
 						name: 'Get From Feed',
 						value: 'getFromFeed',
 						description: 'Get articles from a specific feed',
@@ -66,6 +84,12 @@ export class Inoreader implements INodeType {
 						description: 'Get articles from a specific folder',
 						action: 'Get articles from folder',
 					},
+                    {
+						name: 'Get From Read Later',
+						value: 'getFromReadLater',
+						description: 'Get articles from the Read later section',
+						action: 'Get articles from Read later',
+					},
 					{
 						name: 'Get From Tag',
 						value: 'getFromTag',
@@ -73,34 +97,10 @@ export class Inoreader implements INodeType {
 						action: 'Get articles from tag',
 					},
                     {
-						name: 'Get From Read Later',
-						value: 'getFromReadLater',
-						description: 'Get articles from the Read later section',
-						action: 'Get articles from Read later',
-					},
-                    {
-						name: 'Create in Read Later',
-						value: 'saveToReadLater',
-						description: 'Create external article and save to the Read later section',
-						action: 'Create new article in Read later',
-					},
-                    {
 						name: 'Save to Tag',
 						value: 'saveToTag',
 						description: 'Create external article and save to a specific tag',
 						action: 'Create new article in a specific tag',
-					},
-					{
-						name: 'Add tag',
-						value: 'addToTag',
-						description: 'Add a tag to an article',
-						action: 'Add tag to article',
-					},
-					{
-						name: 'Add to Read Later',
-						value: 'addToReadLater',
-						description: 'Add an article to the Read later section',
-						action: 'Add article to Read later',
 					}
 				],
 				default: 'getFromFeed',
