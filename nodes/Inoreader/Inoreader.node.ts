@@ -4,7 +4,7 @@ import type {
 	INodeType,
 	INodeTypeDescription,
 	NodeConnectionType,
-	IRequestOptions,
+	IHttpRequestOptions,
 } from 'n8n-workflow';
 
 import { NodeOperationError } from 'n8n-workflow';
@@ -320,7 +320,7 @@ export class Inoreader implements INodeType {
 			// List subscriptions (feeds)
 			async getFeeds(this: ILoadOptionsFunctions) {
                 const returnData: Array<{ name: string; value: string; description?: string }> = [];
-				const response = await this.helpers.requestOAuth2.call(
+				const response = await this.helpers.httpRequestWithAuthentication.call(
 					this,
 					'inoreaderOAuth2Api',
 					{
@@ -343,7 +343,7 @@ export class Inoreader implements INodeType {
 			// List folders
 			async getFolders(this: ILoadOptionsFunctions) {
                 const returnData: Array<{ name: string; value: string; description?: string }> = [];
-				const response = await this.helpers.requestOAuth2.call(
+				const response = await this.helpers.httpRequestWithAuthentication.call(
 					this,
 					'inoreaderOAuth2Api',
 					{
@@ -367,7 +367,7 @@ export class Inoreader implements INodeType {
 			// List tags
 			async getTags(this: ILoadOptionsFunctions) {
                 const returnData: Array<{ name: string; value: string; description?: string }> = [];
-				const response = await this.helpers.requestOAuth2.call(
+				const response = await this.helpers.httpRequestWithAuthentication.call(
 					this,
 					'inoreaderOAuth2Api',
 					{
@@ -392,9 +392,12 @@ export class Inoreader implements INodeType {
 
 	async execute(this: IExecuteFunctions) {
 		const items = this.getInputData();
-        const returnData: Array<{ json: any }> = [];
+        const returnData: Array<{ json: any; pairedItem?: { item: number } }> = [];
+
+		const shouldContinueOnFail = this.continueOnFail();
 
 		for (let i = 0; i < items.length; i++) {
+			try {
 			const resource = this.getNodeParameter('resource', i) as string;
 			const operation = this.getNodeParameter('operation', i) as string;
 
@@ -409,19 +412,16 @@ export class Inoreader implements INodeType {
 					if (!tagId) {
 						throw new NodeOperationError(this.getNode(), 'Tag ID is required for adding a tag!');
 					}
-					const options: IRequestOptions = {
+					const options: IHttpRequestOptions = {
 						method: 'POST' as 'POST',
 						url: 'https://www.inoreader.com/reader/api/0/edit-tag?return_json=true&partner=n8n',
 						headers: {
 							'Content-Type': 'application/x-www-form-urlencoded',
 							Accept: 'application/json',
 						},
-                        form: {
-                            a: tagId,
-                            i: articleId,
-                        },
+                        body: `a=${encodeURIComponent(tagId)}&i=${encodeURIComponent(articleId)}`,
 					};
-					let responseData = await this.helpers.requestOAuth2.call(
+					let responseData = await this.helpers.httpRequestWithAuthentication.call(
 						this,
 						'inoreaderOAuth2Api',
 						options
@@ -429,7 +429,7 @@ export class Inoreader implements INodeType {
 					if (typeof responseData === 'string') {
 						responseData = JSON.parse(responseData);
 					}
-					returnData.push({ json: responseData });
+					returnData.push({ json: responseData, pairedItem: { item: i } });
                 }else if(operation === 'saveToReadLater' || operation === 'saveToTag') {
                     const articleUrl = this.getNodeParameter('articleUrl', i) as string;
                     const articleTitle = this.getNodeParameter('articleTitle', i) as string;
@@ -439,21 +439,21 @@ export class Inoreader implements INodeType {
                     }
 					
                     const tagId = this.getNodeParameter('tagId', i) as string | undefined;
-                    const options: IRequestOptions = {
+                    const options: IHttpRequestOptions = {
                         method: 'POST' as 'POST',
                         url: 'https://www.inoreader.com/reader/api/0/save-web-page?return_json=true&partner=n8n',
                         headers: {
                             'Content-Type': 'application/x-www-form-urlencoded',
                             Accept: 'application/json',
                         },
-                        form: {
-                            url: articleUrl,
-                            title: articleTitle,
-                            content: articleContent,
-                            label: tagId ? tagId : null,
-                        },
+                        body: [
+							articleUrl ? `url=${encodeURIComponent(articleUrl)}` : '',
+							articleTitle ? `title=${encodeURIComponent(articleTitle)}` : '',
+							articleContent ? `content=${encodeURIComponent(articleContent)}` : '',
+							tagId ? `label=${encodeURIComponent(tagId)}` : '',
+						].filter(Boolean).join('&'),
                     };
-                    let responseData = await this.helpers.requestOAuth2.call(
+                    let responseData = await this.helpers.httpRequestWithAuthentication.call(
                         this,
                         'inoreaderOAuth2Api',
                         options
@@ -461,7 +461,7 @@ export class Inoreader implements INodeType {
                     if (typeof responseData === 'string') {
                         responseData = JSON.parse(responseData);
                     }
-                    returnData.push({ json: responseData });
+                    returnData.push({ json: responseData, pairedItem: { item: i } });
 
                 }else{
                     if (operation === 'getFromFeed') {
@@ -485,14 +485,14 @@ export class Inoreader implements INodeType {
                         // You can add more stream/contents parameters here as needed
                     };
         
-                    const options: IRequestOptions = {
+                    const options: IHttpRequestOptions = {
                         method: 'GET' as 'GET',
                         url: 'https://www.inoreader.com/reader/api/0/stream/contents/' + encodeURIComponent(streamId),
                         headers: { Accept: 'application/json' },
                         qs,
                     };
         
-                    let responseData = await this.helpers.requestOAuth2.call(
+                    let responseData = await this.helpers.httpRequestWithAuthentication.call(
                         this,
                         'inoreaderOAuth2Api',
                         options
@@ -504,20 +504,20 @@ export class Inoreader implements INodeType {
         
                     if (responseData.items) {
                         for (const item of responseData.items) {
-                            returnData.push({ json: item });
+                            returnData.push({ json: item, pairedItem: { item: i } });
                         }
                     } else {
-                        returnData.push({ json: responseData });
+                        returnData.push({ json: responseData, pairedItem: { item: i } });
                     }
                 }
             }else if (resource === 'feed' && operation === 'getAllFeeds') {
-                const options: IRequestOptions = {
+                const options: IHttpRequestOptions = {
                     method: 'GET' as 'GET',
                     url: 'https://www.inoreader.com/reader/api/0/subscription/list',
                     headers: { Accept: 'application/json' },
                 };
                 
-                let responseData = await this.helpers.requestOAuth2.call(
+                let responseData = await this.helpers.httpRequestWithAuthentication.call(
                     this,
                     'inoreaderOAuth2Api',
                     options
@@ -529,19 +529,19 @@ export class Inoreader implements INodeType {
 
                 if (responseData.subscriptions) {
                     for (const feed of responseData.subscriptions) {
-                        returnData.push({ json: feed });
+                        returnData.push({ json: feed, pairedItem: { item: i } });
                     }
                 } else {
-                    returnData.push({ json: responseData });
+                    returnData.push({ json: responseData, pairedItem: { item: i } });
                 }
             }else if (resource === 'tag' && operation === 'getAllTags' || operation === 'getAllFolders') {
-				const options: IRequestOptions = {
+				const options: IHttpRequestOptions = {
 					method: 'GET' as 'GET',
 					url: 'https://www.inoreader.com/reader/api/0/tag/list?types=1',
 					headers: { Accept: 'application/json' },
 				};
 				
-				let responseData = await this.helpers.requestOAuth2.call(
+				let responseData = await this.helpers.httpRequestWithAuthentication.call(
 					this,
 					'inoreaderOAuth2Api',
 					options
@@ -554,14 +554,21 @@ export class Inoreader implements INodeType {
 				if (responseData.tags) {
 					for (const tag of responseData.tags) {
 						if( operation === 'getAllTags' && tag.type === 'tag') {
-							returnData.push({ json: tag });
+							returnData.push({ json: tag, pairedItem: { item: i } });
 						} else if (operation === 'getAllFolders' && tag.type === 'folder') {
-							returnData.push({ json: tag });
+							returnData.push({ json: tag, pairedItem: { item: i } });
 						}
 					}
 				} else {
-					returnData.push({ json: responseData });
+					returnData.push({ json: responseData, pairedItem: { item: i } });
 				}
+			}
+		} catch (error) {
+			if (shouldContinueOnFail) {
+				returnData.push({ json: { error: (error as Error).message }, pairedItem: { item: i } });
+				continue;
+			}
+			throw new NodeOperationError(this.getNode(), (error as Error), { itemIndex: i });
 			}
 		}
 

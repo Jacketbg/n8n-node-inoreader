@@ -4,7 +4,7 @@ import type {
 	IPollFunctions,
 	ILoadOptionsFunctions,
 	NodeConnectionType,
-	IRequestOptions,
+	IHttpRequestOptions,
     INodeExecutionData
 	
 } from 'n8n-workflow';
@@ -94,7 +94,7 @@ export class InoreaderTrigger implements INodeType {
 		loadOptions: {
 			async getFeeds(this: ILoadOptionsFunctions) {
 				const returnData: Array<{ name: string; value: string }> = [];
-				const response = await this.helpers.requestOAuth2.call(
+				const response = await this.helpers.httpRequestWithAuthentication.call(
 					this,
 					'inoreaderOAuth2Api',
 					{
@@ -114,7 +114,7 @@ export class InoreaderTrigger implements INodeType {
 			},
 			async getFolders(this: ILoadOptionsFunctions) {
 				const returnData: Array<{ name: string; value: string }> = [];
-				const response = await this.helpers.requestOAuth2.call(
+				const response = await this.helpers.httpRequestWithAuthentication.call(
 					this,
 					'inoreaderOAuth2Api',
 					{
@@ -154,14 +154,15 @@ export class InoreaderTrigger implements INodeType {
 			n: 20,
 		};
 
-		const options: IRequestOptions = {
+		const options: IHttpRequestOptions = {
+			json: true,
 			method: 'GET' as 'GET',
 			url: 'https://www.inoreader.com/reader/api/0/stream/contents/' + encodeURIComponent(streamId!),
 			headers: { Accept: 'application/json' },
 			qs,
 		};
 
-		let responseData = await this.helpers.requestOAuth2.call(
+		let responseData = await this.helpers.httpRequestWithAuthentication.call(
 			this,
 			'inoreaderOAuth2Api',
 			options
