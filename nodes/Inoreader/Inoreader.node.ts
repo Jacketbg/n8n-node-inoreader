@@ -5,6 +5,7 @@ import type {
 	INodeTypeDescription,
 	NodeConnectionType,
 	IHttpRequestOptions,
+	INodeExecutionData,
 } from 'n8n-workflow';
 
 import { NodeOperationError } from 'n8n-workflow';
@@ -392,186 +393,193 @@ export class Inoreader implements INodeType {
 
 	async execute(this: IExecuteFunctions) {
 		const items = this.getInputData();
-        const returnData: Array<{ json: any; pairedItem?: { item: number } }> = [];
+        const returnItems: INodeExecutionData[] = [];
 
 		const shouldContinueOnFail = this.continueOnFail();
 
 		for (let i = 0; i < items.length; i++) {
+			const perItem: INodeExecutionData[] = [];
 			try {
-			const resource = this.getNodeParameter('resource', i) as string;
-			const operation = this.getNodeParameter('operation', i) as string;
+				const resource = this.getNodeParameter('resource', i) as string;
+				const operation = this.getNodeParameter('operation', i) as string;
 
-			let streamId: string | undefined;
-			if (resource === 'article') {
-				if(operation == 'addToReadLater' || operation === 'addToTag') {
-					const articleId = this.getNodeParameter('articleId', i) as string;
-					if (!articleId) {	
-						throw new NodeOperationError(this.getNode(), 'Article ID is required for adding a tag!');
+				let streamId: string | undefined;
+				if (resource === 'article') {
+					if (operation == 'addToReadLater' || operation === 'addToTag') {
+						const articleId = this.getNodeParameter('articleId', i) as string;
+						if (!articleId) {
+							throw new NodeOperationError(this.getNode(), 'Article ID is required for adding a tag!', { itemIndex: i });
+						}
+						const tagId = this.getNodeParameter('tagId', i) as string;
+						if (!tagId) {
+							throw new NodeOperationError(this.getNode(), 'Tag ID is required for adding a tag!', { itemIndex: i });
+						}
+						const options: IHttpRequestOptions = {
+							method: 'POST' as 'POST',
+							url: 'https://www.inoreader.com/reader/api/0/edit-tag?return_json=true&partner=n8n',
+							headers: {
+								'Content-Type': 'application/x-www-form-urlencoded',
+								Accept: 'application/json',
+							},
+							body: `a=${encodeURIComponent(tagId)}&i=${encodeURIComponent(articleId)}`,
+						};
+						let responseData = await this.helpers.httpRequestWithAuthentication.call(
+							this,
+							'inoreaderOAuth2Api',
+							options
+						);
+						if (typeof responseData === 'string') {
+							responseData = JSON.parse(responseData);
+						}
+						perItem.push({ json: responseData });
+					} else if (operation === 'saveToReadLater' || operation === 'saveToTag') {
+						const articleUrl = this.getNodeParameter('articleUrl', i) as string;
+						const articleTitle = this.getNodeParameter('articleTitle', i) as string;
+						const articleContent = this.getNodeParameter('articleContent', i) as string;
+						if (!articleUrl && !articleTitle && !articleContent) {
+							throw new NodeOperationError(this.getNode(), 'At least one of articleUrl, articleTitle, or articleContent must be provided!', { itemIndex: i });
+						}
+
+						const tagId = this.getNodeParameter('tagId', i) as string | undefined;
+						const options: IHttpRequestOptions = {
+							method: 'POST' as 'POST',
+							url: 'https://www.inoreader.com/reader/api/0/save-web-page?return_json=true&partner=n8n',
+							headers: {
+								'Content-Type': 'application/x-www-form-urlencoded',
+								Accept: 'application/json',
+							},
+							body: [
+								articleUrl ? `url=${encodeURIComponent(articleUrl)}` : '',
+								articleTitle ? `title=${encodeURIComponent(articleTitle)}` : '',
+								articleContent ? `content=${encodeURIComponent(articleContent)}` : '',
+								tagId ? `label=${encodeURIComponent(tagId)}` : '',
+							].filter(Boolean).join('&'),
+						};
+						let responseData = await this.helpers.httpRequestWithAuthentication.call(
+							this,
+							'inoreaderOAuth2Api',
+							options
+						);
+						if (typeof responseData === 'string') {
+							responseData = JSON.parse(responseData);
+						}
+						perItem.push({ json: responseData });
+
+					} else {
+						if (operation === 'getFromFeed') {
+							streamId = this.getNodeParameter('feedId', i) as string;
+						} else if (operation === 'getFromFolder') {
+							streamId = this.getNodeParameter('folderId', i) as string;
+						} else if (operation === 'getFromTag') {
+							streamId = this.getNodeParameter('tagId', i) as string;
+						} else if (operation === 'getFromReadLater') {
+							streamId = 'user/-/state/com.google/starred';
+						}
+
+						const limit = this.getNodeParameter('limit', i, 20) as number;
+
+						if (!streamId) {
+							throw new NodeOperationError(this.getNode(), 'No streamId resolved!');
+						}
+
+						const qs: Record<string, any> = {
+							n: limit,
+						};
+
+						const options: IHttpRequestOptions = {
+							method: 'GET' as 'GET',
+							url: 'https://www.inoreader.com/reader/api/0/stream/contents/' + encodeURIComponent(streamId),
+							headers: { Accept: 'application/json' },
+							qs,
+						};
+
+						let responseData = await this.helpers.httpRequestWithAuthentication.call(
+							this,
+							'inoreaderOAuth2Api',
+							options
+						);
+
+						if (typeof responseData === 'string') {
+							responseData = JSON.parse(responseData);
+						}
+
+						if (responseData.items) {
+							for (const item of responseData.items) {
+								perItem.push({ json: item });
+							}
+						} else {
+							perItem.push({ json: responseData });
+						}
 					}
-					const tagId = this.getNodeParameter('tagId', i) as string;
-					if (!tagId) {
-						throw new NodeOperationError(this.getNode(), 'Tag ID is required for adding a tag!');
-					}
+				} else if (resource === 'feed' && operation === 'getAllFeeds') {
 					const options: IHttpRequestOptions = {
-						method: 'POST' as 'POST',
-						url: 'https://www.inoreader.com/reader/api/0/edit-tag?return_json=true&partner=n8n',
-						headers: {
-							'Content-Type': 'application/x-www-form-urlencoded',
-							Accept: 'application/json',
-						},
-                        body: `a=${encodeURIComponent(tagId)}&i=${encodeURIComponent(articleId)}`,
+						method: 'GET' as 'GET',
+						url: 'https://www.inoreader.com/reader/api/0/subscription/list',
+						headers: { Accept: 'application/json' },
 					};
+					
 					let responseData = await this.helpers.httpRequestWithAuthentication.call(
 						this,
 						'inoreaderOAuth2Api',
 						options
 					);
+
 					if (typeof responseData === 'string') {
 						responseData = JSON.parse(responseData);
 					}
-					returnData.push({ json: responseData, pairedItem: { item: i } });
-                }else if(operation === 'saveToReadLater' || operation === 'saveToTag') {
-                    const articleUrl = this.getNodeParameter('articleUrl', i) as string;
-                    const articleTitle = this.getNodeParameter('articleTitle', i) as string;
-                    const articleContent = this.getNodeParameter('articleContent', i) as string;
-                    if (!articleUrl && !articleTitle && !articleContent) {
-                        throw new NodeOperationError(this.getNode(), 'At least one of articleUrl, articleTitle, or articleContent must be provided!');
-                    }
-					
-                    const tagId = this.getNodeParameter('tagId', i) as string | undefined;
-                    const options: IHttpRequestOptions = {
-                        method: 'POST' as 'POST',
-                        url: 'https://www.inoreader.com/reader/api/0/save-web-page?return_json=true&partner=n8n',
-                        headers: {
-                            'Content-Type': 'application/x-www-form-urlencoded',
-                            Accept: 'application/json',
-                        },
-                        body: [
-							articleUrl ? `url=${encodeURIComponent(articleUrl)}` : '',
-							articleTitle ? `title=${encodeURIComponent(articleTitle)}` : '',
-							articleContent ? `content=${encodeURIComponent(articleContent)}` : '',
-							tagId ? `label=${encodeURIComponent(tagId)}` : '',
-						].filter(Boolean).join('&'),
-                    };
-                    let responseData = await this.helpers.httpRequestWithAuthentication.call(
-                        this,
-                        'inoreaderOAuth2Api',
-                        options
-                    );
-                    if (typeof responseData === 'string') {
-                        responseData = JSON.parse(responseData);
-                    }
-                    returnData.push({ json: responseData, pairedItem: { item: i } });
 
-                }else{
-                    if (operation === 'getFromFeed') {
-                        streamId = this.getNodeParameter('feedId', i) as string;
-                    } else if (operation === 'getFromFolder') {
-                        streamId = this.getNodeParameter('folderId', i) as string;
-                    } else if (operation === 'getFromTag') {
-                        streamId = this.getNodeParameter('tagId', i) as string;
-                    } else if (operation === 'getFromReadLater') {
-                        streamId = 'user/-/state/com.google/starred';
-                    }
-    
-                    const limit = this.getNodeParameter('limit', i, 20) as number;
-    
-                    if (!streamId) {
-                        throw new NodeOperationError(this.getNode(), 'No streamId resolved!');
-                    }
-        
-                    const qs: Record<string, any> = {
-                        n: limit,
-                        // You can add more stream/contents parameters here as needed
-                    };
-        
-                    const options: IHttpRequestOptions = {
-                        method: 'GET' as 'GET',
-                        url: 'https://www.inoreader.com/reader/api/0/stream/contents/' + encodeURIComponent(streamId),
-                        headers: { Accept: 'application/json' },
-                        qs,
-                    };
-        
-                    let responseData = await this.helpers.httpRequestWithAuthentication.call(
-                        this,
-                        'inoreaderOAuth2Api',
-                        options
-                    );
-        
-                    if (typeof responseData === 'string') {
-                        responseData = JSON.parse(responseData);
-                    }
-        
-                    if (responseData.items) {
-                        for (const item of responseData.items) {
-                            returnData.push({ json: item, pairedItem: { item: i } });
-                        }
-                    } else {
-                        returnData.push({ json: responseData, pairedItem: { item: i } });
-                    }
-                }
-            }else if (resource === 'feed' && operation === 'getAllFeeds') {
-                const options: IHttpRequestOptions = {
-                    method: 'GET' as 'GET',
-                    url: 'https://www.inoreader.com/reader/api/0/subscription/list',
-                    headers: { Accept: 'application/json' },
-                };
-                
-                let responseData = await this.helpers.httpRequestWithAuthentication.call(
-                    this,
-                    'inoreaderOAuth2Api',
-                    options
-                );
-
-                if (typeof responseData === 'string') {
-                    responseData = JSON.parse(responseData);
-                }
-
-                if (responseData.subscriptions) {
-                    for (const feed of responseData.subscriptions) {
-                        returnData.push({ json: feed, pairedItem: { item: i } });
-                    }
-                } else {
-                    returnData.push({ json: responseData, pairedItem: { item: i } });
-                }
-            }else if (resource === 'tag' && operation === 'getAllTags' || operation === 'getAllFolders') {
-				const options: IHttpRequestOptions = {
-					method: 'GET' as 'GET',
-					url: 'https://www.inoreader.com/reader/api/0/tag/list?types=1',
-					headers: { Accept: 'application/json' },
-				};
-				
-				let responseData = await this.helpers.httpRequestWithAuthentication.call(
-					this,
-					'inoreaderOAuth2Api',
-					options
-				);
-
-				if (typeof responseData === 'string') {
-					responseData = JSON.parse(responseData);
-				}
-
-				if (responseData.tags) {
-					for (const tag of responseData.tags) {
-						if( operation === 'getAllTags' && tag.type === 'tag') {
-							returnData.push({ json: tag, pairedItem: { item: i } });
-						} else if (operation === 'getAllFolders' && tag.type === 'folder') {
-							returnData.push({ json: tag, pairedItem: { item: i } });
+					if (responseData.subscriptions) {
+						for (const feed of responseData.subscriptions) {
+							perItem.push({ json: feed });
 						}
+					} else {
+						perItem.push({ json: responseData });
 					}
-				} else {
-					returnData.push({ json: responseData, pairedItem: { item: i } });
+				} else if (resource === 'tag' && operation === 'getAllTags' || operation === 'getAllFolders') {
+					const options: IHttpRequestOptions = {
+						method: 'GET' as 'GET',
+						url: 'https://www.inoreader.com/reader/api/0/tag/list?types=1',
+						headers: { Accept: 'application/json' },
+					};
+					
+					let responseData = await this.helpers.httpRequestWithAuthentication.call(
+						this,
+						'inoreaderOAuth2Api',
+						options
+					);
+
+					if (typeof responseData === 'string') {
+						responseData = JSON.parse(responseData);
+					}
+
+					if (responseData.tags) {
+						for (const tag of responseData.tags) {
+							if( operation === 'getAllTags' && tag.type === 'tag') {
+								perItem.push({ json: tag });
+							} else if (operation === 'getAllFolders' && tag.type === 'folder') {
+								perItem.push({ json: tag });
+							}
+						}
+					} else {
+						perItem.push({ json: responseData });
+					}
 				}
-			}
-		} catch (error) {
-			if (shouldContinueOnFail) {
-				returnData.push({ json: { error: (error as Error).message }, pairedItem: { item: i } });
-				continue;
-			}
-			throw new NodeOperationError(this.getNode(), (error as Error), { itemIndex: i });
+
+				// attach pairing for all outputs from this input item
+				const execMeta = this.helpers.constructExecutionMetaData(perItem, { itemData: { item: i } });
+				returnItems.push(...execMeta);
+
+			} catch (error) {
+				if (shouldContinueOnFail) {
+					const errorPerItem: INodeExecutionData[] = [{ json: { error: (error as Error).message } }];
+					const execMeta = this.helpers.constructExecutionMetaData(errorPerItem, { itemData: { item: i } });
+					returnItems.push(...execMeta);
+					continue;
+				}
+				throw new NodeOperationError(this.getNode(), (error as Error), { itemIndex: i });
 			}
 		}
 
-		return this.prepareOutputData(returnData);
+		return this.prepareOutputData(returnItems);
 	}
 }
