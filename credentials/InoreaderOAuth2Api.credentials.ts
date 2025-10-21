@@ -6,13 +6,6 @@ export class InoreaderOAuth2Api implements ICredentialType {
 	displayName = 'Inoreader OAuth2 API';
 	documentationUrl = 'https://www.inoreader.com/developers/oauth';
 
-	queryParameters = [
-		{
-			name: 'access_type',
-			value: 'offline',
-		},
-	];
-	
 	properties: INodeProperties[] = [
 		{
 			displayName: 'App ID',
@@ -42,11 +35,17 @@ export class InoreaderOAuth2Api implements ICredentialType {
 			default: 'https://www.inoreader.com/oauth2/token',
 		},
 		{
+			displayName: 'Auth URI Query Parameters',
+			name: 'authQueryParameters',
+			type: 'hidden',
+			default: 'access_type=offline',
+		},
+		{
 			displayName: 'Scopes',
 			name: 'scope',
 			type: 'string',
 			default: 'read write',
-			description: 'Space-separated list of scopes (leave default unless you need less access)',
+			description: 'Use "read" ot "read write" to set the desired permission level',
 		},
 	];
 }
